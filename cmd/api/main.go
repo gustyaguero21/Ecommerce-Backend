@@ -1,9 +1,34 @@
 package main
 
-import "ecommerce-backend/internal/infrastructure/http/router"
+import (
+	"context"
+	"ecommerce-backend/internal/infrastructure/config"
+	"ecommerce-backend/internal/infrastructure/database"
+	"ecommerce-backend/internal/infrastructure/database/migration"
+	"ecommerce-backend/internal/infrastructure/http/router"
+	"log"
+)
 
 func main() {
-	server := router.StartServer()
+	ctx := context.Background()
 
-	server.Run(router.Port)
+	cfg, cfgErr := config.LoadEnv()
+	if cfgErr != nil {
+		log.Fatal(cfgErr)
+	}
+
+	dbConn := database.DBConnection{Config: cfg}
+
+	pool, poolErr := dbConn.Connection()
+	if poolErr != nil {
+		log.Fatal(poolErr)
+	}
+
+	if migrateErr := migration.RunMigrations(ctx, pool); migrateErr != nil {
+		log.Fatal(migrateErr)
+	}
+
+	router := router.StartServer()
+
+	router.Run(cfg.HTTPConfig.Port)
 }
