@@ -5,6 +5,7 @@ import (
 	"ecommerce-backend/internal/infrastructure/config"
 	"ecommerce-backend/internal/infrastructure/database"
 	"ecommerce-backend/internal/infrastructure/database/migration"
+	"ecommerce-backend/internal/infrastructure/database/user"
 	"ecommerce-backend/internal/infrastructure/http/router"
 	"log"
 )
@@ -27,6 +28,15 @@ func main() {
 	if migrateErr := migration.RunMigrations(ctx, pool); migrateErr != nil {
 		log.Fatal(migrateErr)
 	}
+
+	repo := user.NewUserRepository(pool)
+
+	user, err := repo.GetUserByID(ctx, "1")
+	if err != nil {
+		log.Print(err)
+	}
+
+	log.Print(user)
 
 	router := router.StartServer()
 
